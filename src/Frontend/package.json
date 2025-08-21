@@ -1,0 +1,37 @@
+{
+  "name": "nextjs-landing-page",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "setup:auto": "bash scripts/setup-auto.sh",
+    "setup:auto:win": "scripts/setup-auto.bat",
+    "copy:dfx": "bash scripts/copy-dfx-assets.sh",
+    "copy:dfx:win": "scripts/copy-dfx-assets.bat"
+  },
+  "dependencies": {
+    "@dfinity/agent": "^3.2.1",
+    "@dfinity/auth-client": "^3.2.1",
+    "@dfinity/candid": "^3.2.1",
+    "@dfinity/identity": "^3.2.1",
+    "@dfinity/principal": "^3.2.1",
+    "lucide-react": "^0.294.0",
+    "next": "14.0.4",
+    "react": "^18",
+    "react-dom": "^18"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "autoprefixer": "^10.0.1",
+    "eslint": "^8",
+    "eslint-config-next": "14.0.4",
+    "postcss": "^8",
+    "tailwindcss": "^3.3.0",
+    "typescript": "^5"
+  }
+}

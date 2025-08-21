@@ -1,0 +1,135 @@
+type UserProfile = 
+ record {
+   coin: nat;
+   quests: vec Quest;
+   roles: vec RoleProfile;
+   skins: vec InventoryItem;
+   stamina: nat;
+   username: text;
+ };
+type UserError = 
+ variant {
+   RoleNotFound;
+   UserNotFound;
+ };
+type Time = int;
+type SkinId = nat;
+type Skin = 
+ record {
+   description: text;
+   id: SkinId;
+   image_url: text;
+   is_limited: bool;
+   name: text;
+   price: nat;
+   rarity: text;
+ };
+type ShopError = 
+ variant {
+   AlreadyOwned;
+   NotAdmin;
+   NotEnoughCoin;
+   SkinNotFound;
+   UserNotFound;
+ };
+type RoleSelection = 
+ variant {
+   Arts;
+   Codes;
+   Literature;
+   Sports;
+   Traveler;
+ };
+type RoleProfile = 
+ record {
+   badge: text;
+   exp: nat;
+   id: CurrentRoleId;
+   is_active: bool;
+   level: nat;
+   name: text;
+ };
+type Result_4 = 
+ variant {
+   err: ShopError;
+   ok: SkinId;
+ };
+type Result_3 = 
+ variant {
+   err: ShopError;
+   ok;
+ };
+type Result_2 = 
+ variant {
+   err: UserError;
+   ok;
+ };
+type Result_1 = 
+ variant {
+   err: text;
+   ok;
+ };
+type Result = 
+ variant {
+   err: RegistrationError;
+   ok: UserProfile;
+ };
+type RegistrationError = 
+ variant {
+   AlreadyRegistered;
+   UsernameTaken;
+ };
+type QuestId = nat;
+type Quest = 
+ record {
+   coin_reward: nat;
+   exp_reward: nat;
+   id: QuestId;
+   is_active: bool;
+   stamina_cost: nat;
+   title: text;
+ };
+type InventoryItem = 
+ record {
+   acquired_at: Time;
+   id: InventoryId;
+   is_active: bool;
+   skin_id: SkinId;
+ };
+type InventoryId = nat;
+type DebugUser = 
+ record {
+   coin: nat;
+   last_action_timestamp: Time;
+   owner_principal: principal;
+   stamina: nat;
+   username: text;
+ };
+type CurrentRoleId = nat;
+service : {
+  activateSkin: (inventory_id: InventoryId) -> (Result_3);
+  addSkin: (name: text, description: text, rarity: text, image_url: text,
+   is_limited: bool, price: nat) -> (Result_4);
+  buySkin: (skin_id: SkinId) -> (Result_3);
+  chooseRole: (role_to_toggle: RoleSelection) -> (Result_2);
+  debugInventories: () -> (vec record {
+                                 principal;
+                                 vec InventoryItem;
+                               }) query;
+  debugSkins: () -> (vec record {
+                           SkinId;
+                           Skin;
+                         }) query;
+  debugUsers: () -> (vec record {
+                           principal;
+                           DebugUser;
+                         }) query;
+  getInventory: () -> (vec InventoryItem) query;
+  getProfileUser: () -> (opt UserProfile) query;
+  getShop: () -> (vec Skin) query;
+  grantCoin: (target: principal, amount: nat) -> (Result_1);
+  grantCoinByUsername: (username: text, amount: nat) -> (Result_1);
+  isUserExists: () -> (bool) query;
+  registerUser: (username: text) -> (Result);
+  whoami: () -> (text) query;
+}
