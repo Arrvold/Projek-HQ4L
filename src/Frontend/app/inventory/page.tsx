@@ -133,52 +133,12 @@ export default function InventoryPage() {
                             {/* Character Image */}
                             <div className="mb-6">
                                 <img
-                                    src="/assets/om_ded.png"
+                                    src="https://freeweb3.infura-ipfs.io/ipfs/Qmbhu7Yj2osW5BRaYAwCGF8s9aMcAHYTGY1GPS6VnjRKpe"
                                     alt="Character"
-                                    className="w-48 h-48 object-contain"
                                     onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/assets/button.png' }}
                                 />
                             </div>
-
-                            {/* Character Stats */}
-                            <div className="w-full space-y-3">
-                                <div className="bg-gray-100 border-2 border-gray-600 p-3 rounded-lg">
-                                    <div className="text-sm font-bold text-gray-800 font-minecraft mb-2">Stats</div>
-                                    <div className="grid grid-cols-2 gap-2 text-xs font-minecraft">
-                                        <div className="flex justify-between">
-                                            <span>Level:</span>
-                                            <span className="font-bold">25</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span>EXP:</span>
-                                            <span className="font-bold">1,250 / 2,000</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span>Attack:</span>
-                                            <span className="font-bold">180</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span>Defense:</span>
-                                            <span className="font-bold">120</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span>Health:</span>
-                                            <span className="font-bold">450</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span>Mana:</span>
-                                            <span className="font-bold">200</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="bg-gray-100 border-2 border-gray-600 p-3 rounded-lg">
-                                    <div className="text-sm font-bold text-gray-800 font-minecraft mb-2">Role</div>
-                                    <div className="text-xs font-minecraft">
-                                        <span className="bg-blue-200 border-2 border-blue-600 px-2 py-1 rounded">Codes</span>
-                                    </div>
-                                </div>
-                            </div>
+                          
                         </div>
                     </div>
                     {/* Left Column - Equipment Cards (60% width) */}
