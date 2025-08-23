@@ -1,76 +1,60 @@
-'use client'
+'use client';
 
-import { useEffect, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '../lib/AuthContext'; // Sesuaikan path jika perlu
 
+// Interface untuk mendefinisikan props yang diterima komponen
 interface DashboardHeaderProps {
-  username: string
-  stamina: number
-  coins: number
-  userRole: string
+  username: string;
+  stamina: number;
+  coins: number;
 }
 
-export default function DashboardHeader({ username, stamina, coins, userRole }: DashboardHeaderProps) {
-  const router = useRouter()
-  
-  const getRoleName = (roleId: string) => {
-    const roleNames: { [key: string]: string } = {
-      'codes': 'Codes',
-      'sports': 'Sports',
-      'arts': 'Arts',
-      'traveler': 'Traveler',
-      'literature': 'Literature'
-    }
-    return roleNames[roleId] || roleId
-  }
+export default function DashboardHeader({ username, stamina, coins }: DashboardHeaderProps) {
+  const router = useRouter();
+  const { logout } = useAuth(); // Mengambil fungsi logout dari context
 
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const menuRef = useRef<HTMLDivElement | null>(null)
+  // State dan Ref untuk mengelola visibilitas menu dropdown
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
 
+  // Hook untuk menutup menu saat pengguna mengklik di luar area menu
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsMenuOpen(false)
+        setIsMenuOpen(false);
       }
-    }
+    };
+
     if (isMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
+      document.addEventListener('mousedown', handleClickOutside);
     }
+
+    // Membersihkan event listener saat komponen dibongkar atau menu ditutup
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [isMenuOpen])
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMenuOpen]);
 
-  const handleLogout = () => {
-    try {
-      localStorage.removeItem('username')
-      localStorage.removeItem('userRole')
-    } catch (e) {
-      // noop
-    }
-    window.location.href = '/'
-  }
+  // Fungsi logout yang memanggil fungsi dari context
+  const handleLogout = async () => {
+    setIsMenuOpen(false); // Tutup menu terlebih dahulu
+    await logout();
+    router.push('/'); // Arahkan ke halaman utama setelah logout
+  };
 
-  const handleShopClick = () => {
-    setIsMenuOpen(false)
-    router.push('/shop')
-  }
-
-  const handleInventoryClick = () => {
-    setIsMenuOpen(false)
-    router.push('/inventory')
-  }
-
-  const handleLeaderboardClick = () => {
-    setIsMenuOpen(false)
-    router.push('/leaderboard')
-  }
+  // Kumpulan fungsi untuk navigasi yang menggunakan Next.js Router
+  const handleNavigation = (path: string) => {
+    setIsMenuOpen(false);
+    router.push(path);
+  };
 
   return (
-    <header className="bg-white shadow-lg border-b border-gray-200">
+    <header className="bg-white shadow-lg border-b border-gray-200 sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Nama User - Pojok Kiri */}
+          {/* Nama Pengguna - Pojok Kiri */}
           <div className="flex items-center">
             <h1 className="text-xl font-bold text-gray-900 font-minecraft">
               {username}
@@ -87,7 +71,7 @@ export default function DashboardHeader({ username, stamina, coins, userRole }: 
                 className="w-6 h-6"
               />
               <span className="text-gray-900 font-minecraft font-medium">
-                {stamina}/100
+                {stamina}/30
               </span>
             </div>
             
@@ -114,37 +98,38 @@ export default function DashboardHeader({ username, stamina, coins, userRole }: 
                 Menu
               </button>
 
+              {/* Konten Dropdown Menu */}
               {isMenuOpen && (
                 <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-2xl shadow-2xl z-50 p-4">
                   <div className="grid grid-cols-3 gap-4">
-                    {/* Shop */}
-                    <button className="flex flex-col items-center justify-center gap-2 hover:bg-gray-50 rounded-xl p-3 transition font-minecraft" onClick={handleShopClick}>
-                      <img src="/assets/menu_shop.png" alt="Shop" className="w-8 h-8" onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/assets/button.png' }} />
+                    {/* Tombol Shop */}
+                    <button onClick={() => handleNavigation('/shop')} className="flex flex-col items-center justify-center gap-2 hover:bg-gray-50 rounded-xl p-3 transition font-minecraft">
+                      <img src="/assets/menu_shop.png" alt="Shop" className="w-8 h-8" />
                       <span className="text-xs text-gray-800">Shop</span>
                     </button>
-                    {/* Inventory */}
-                    <button className="flex flex-col items-center justify-center gap-2 hover:bg-gray-50 rounded-xl p-3 transition font-minecraft" onClick={handleInventoryClick}>
-                      <img src="/assets/menu_inventory.png" alt="Inventory" className="w-8 h-8" onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/assets/button.png' }} />
+                    {/* Tombol Inventory */}
+                    <button onClick={() => handleNavigation('/inventory')} className="flex flex-col items-center justify-center gap-2 hover:bg-gray-50 rounded-xl p-3 transition font-minecraft">
+                      <img src="/assets/menu_inventory.png" alt="Inventory" className="w-8 h-8" />
                       <span className="text-xs text-gray-800">Inventory</span>
                     </button>
-                    {/* Leaderboard */}
-                    <button className="flex flex-col items-center justify-center gap-2 hover:bg-gray-50 rounded-xl p-3 transition font-minecraft" onClick={handleLeaderboardClick}>
-                      <img src="/assets/menu_leaderboard.png" alt="Leaderboard" className="w-8 h-8" onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/assets/button.png' }} />
+                    {/* Tombol Leaderboard */}
+                    <button onClick={() => handleNavigation('/leaderboard')} className="flex flex-col items-center justify-center gap-2 hover:bg-gray-50 rounded-xl p-3 transition font-minecraft">
+                      <img src="/assets/menu_leaderboard.png" alt="Leaderboard" className="w-8 h-8" />
                       <span className="text-xs text-gray-800">Leaderboard</span>
                     </button>
-                    {/* Games */}
-                    <button className="flex flex-col items-center justify-center gap-2 hover:bg-gray-50 rounded-xl p-3 transition font-minecraft" onClick={() => setIsMenuOpen(false)}>
-                      <img src="/assets/gacha_woilah.png" alt="Gacha" className="w-8 h-8" onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/assets/button.png' }} />
+                    {/* Tombol Gacha (Contoh) */}
+                    <button onClick={() => handleNavigation('/gacha')} className="flex flex-col items-center justify-center gap-2 hover:bg-gray-50 rounded-xl p-3 transition font-minecraft">
+                      <img src="/assets/gacha_woilah.png" alt="Gacha" className="w-8 h-8" />
                       <span className="text-xs text-gray-800">Gacha</span>
                     </button>
-                    {/* Setting */}
-                    <button className="flex flex-col items-center justify-center gap-2 hover:bg-gray-50 rounded-xl p-3 transition font-minecraft" onClick={() => setIsMenuOpen(false)}>
-                      <img src="/assets/menu_setting.png" alt="Setting" className="w-8 h-8" onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/assets/button.png' }} />
+                    {/* Tombol Setting (Contoh) */}
+                    <button onClick={() => handleNavigation('/settings')} className="flex flex-col items-center justify-center gap-2 hover:bg-gray-50 rounded-xl p-3 transition font-minecraft">
+                      <img src="/assets/menu_setting.png" alt="Setting" className="w-8 h-8" />
                       <span className="text-xs text-gray-800">Setting</span>
                     </button>
-                    {/* Logout */}
-                    <button className="flex flex-col items-center justify-center gap-2 hover:bg-gray-50 rounded-xl p-3 transition font-minecraft text-red-600" onClick={handleLogout}>
-                      <img src="/assets/menu_logout.png" alt="Logout" className="w-8 h-8" onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/assets/button.png' }} />
+                    {/* Tombol Logout */}
+                    <button onClick={handleLogout} className="flex flex-col items-center justify-center gap-2 hover:bg-red-50 rounded-xl p-3 transition font-minecraft text-red-600">
+                      <img src="/assets/menu_logout.png" alt="Logout" className="w-8 h-8" />
                       <span className="text-xs">Logout</span>
                     </button>
                   </div>
@@ -155,5 +140,5 @@ export default function DashboardHeader({ username, stamina, coins, userRole }: 
         </div>
       </div>
     </header>
-  )
+  );
 }

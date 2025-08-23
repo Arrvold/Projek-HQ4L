@@ -1,13 +1,23 @@
 {
-  "version": 1,
   "canisters": {
-    "ic_game_backend": {
-      "main": "src/ic_game_backend/main.mo",
+    "backend": {
       "type": "motoko",
-      "source": [
-        "src/ic_game_backend",
-        ".mops/decs/mo/"
+      "main": "src/backend/main.mo"
+    },
+    "frontend": {
+      "type": "assets",
+      "source": ["src/frontend/out"],
+      "build": [
+        "cd src/frontend && npm install",
+        "cd src/frontend && npm run build"
       ]
+    },
+
+    "internet_identity": {
+      "type": "custom",
+      "wasm": "src/internet_identity/internet_identity.wasm",
+      "candid": "src/internet_identity/internet_identity.did",
+      "argument": "()"
     }
   },
   "networks": {
@@ -20,10 +30,11 @@
       "type": "persistent"
     }
   },
-  "output_env_file": ".env",
   "defaults": {
-    "replica": {
-      "subnet_type": "application"
+    "build": {
+      "packtool": ""
     }
-  }
+  },
+  "output_env_file": ".env",
+  "version": 1
 }

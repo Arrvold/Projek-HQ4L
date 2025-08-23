@@ -2,11 +2,12 @@
 
 import { useState } from 'react'
 import Header from '../components/Header'
-import Hero from '@/components/Hero'
+import Hero from '../components/Hero'
 import RoleCards from '../components/RoleCards'
 import RoleDescription from '../components/RoleDescription'
 import Events from '../components/Events'
-import Footer from '@/components/Footer'
+import Footer from '../components/Footer'
+
 
 export default function Home() {
   const [selectedRole, setSelectedRole] = useState('codes')

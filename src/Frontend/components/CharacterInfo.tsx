@@ -1,73 +1,81 @@
-'use client'
+'use client';
 
+import { useState } from 'react';
+import { useAuth } from '../lib/AuthContext'; // Sesuaikan path
+
+// Tipe data sesuai backend
+export interface Role {
+  id: bigint;
+  role_name: string;
+  level: bigint;
+  exp: bigint;
+  is_active: boolean;
+}
+
+export interface ActiveInventory {
+  id: bigint;
+  skin_name: string;
+  skin_image_url: string;
+  // tambahkan properti lain jika ada
+}
+
+// Props yang diterima komponen
 interface CharacterInfoProps {
-  userRole: string
-  onRoleChange: (roleId: string) => void
+  roles: Role[];
+  activeInventory: ActiveInventory | null;
 }
 
-interface RoleExp {
-  id: string
-  name: string
-  badge: string
-  currentExp: number
-  maxExp: number
-  level: number
-}
+export default function CharacterInfo({ roles, activeInventory }: CharacterInfoProps) {
+  const { actor, refetchProfile } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-export default function CharacterInfo({ userRole, onRoleChange }: CharacterInfoProps) {
-  // Data exp untuk setiap role
-  const roleExpData: RoleExp[] = [
-    {
-      id: 'codes',
-      name: 'Codes',
-      badge: '/assets/badge_code.png',
-      currentExp: 250,
-      maxExp: 500,
-      level: 2
-    },
-    {
-      id: 'sports',
-      name: 'Sports',
-      badge: '/assets/badge_sports.png',
-      currentExp: 150,
-      maxExp: 300,
-      level: 1
-    },
-    {
-      id: 'arts',
-      name: 'Arts',
-      badge: '/assets/badge_art.png',
-      currentExp: 400,
-      maxExp: 500,
-      level: 3
-    },
-    {
-      id: 'traveler',
-      name: 'Traveler',
-      badge: '/assets/badge_explorer.png',
-      currentExp: 75,
-      maxExp: 200,
-      level: 1
-    },
-    {
-      id: 'literature',
-      name: 'Literature',
-      badge: '/assets/badge_literature.png',
-      currentExp: 300,
-      maxExp: 400,
-      level: 2
+  // Helper untuk memetakan nama role ke tipe variant Motoko
+  const roleNameToVariant = (name: string) => {
+    const map: { [key: string]: any } = {
+      Codes: { Codes: null }, Sports: { Sports: null }, Arts: { Arts: null },
+      Traveler: { Traveler: null }, Literature: { Literature: null },
+    };
+    return map[name];
+  };
+
+  // Fungsi untuk mengubah role aktif
+  const handleRoleChange = async (role: Role) => {
+    if (!actor || role.is_active || isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      const roleVariant = roleNameToVariant(role.role_name);
+      if (roleVariant) {
+        await actor.chooseRole(roleVariant);
+        await refetchProfile(); // PENTING: Muat ulang data profil
+      }
+    } catch (e) {
+      console.error("Gagal mengganti role:", e);
+      // Anda bisa menambahkan state error di sini
+    } finally {
+      setIsSubmitting(false);
     }
-  ]
+  };
+  
+  // Fungsi untuk menghitung EXP dan ambang batas level berikutnya
+  const getExpDetails = (level: bigint, exp: bigint) => {
+    const lvl = Number(level);
+    const currentExp = Number(exp);
+    
+    // Logika ini harus cocok dengan backend `calcLevel`
+    const expThresholds: { [key: number]: number } = {
+      1: 200, 2: 500, 3: 1500, 4: 5000, 5: Infinity,
+    };
+    const prevExpThreshold = lvl > 1 ? expThresholds[lvl - 1] : 0;
+    const nextLevelExp = expThresholds[lvl];
+    
+    const expInCurrentLevel = currentExp - prevExpThreshold;
+    const expForNextLevel = nextLevelExp - prevExpThreshold;
 
-  const handleProfileClick = () => {
-    window.location.href = '/profile'
-  }
-
-  const handleRoleChange = (roleId: string) => {
-    if (roleId !== userRole) {
-      onRoleChange(roleId)
-    }
-  }
+    const percentage = expForNextLevel > 0 ? (expInCurrentLevel / expForNextLevel) * 100 : 100;
+    
+    return { percentage, expInCurrentLevel, expForNextLevel };
+  };
 
   return (
     <div>
@@ -75,91 +83,56 @@ export default function CharacterInfo({ userRole, onRoleChange }: CharacterInfoP
         Karakter Info
       </h2>
       
-      {/* Character Icon dan Attribute List - Layout Horizontal */}
+      {isSubmitting && <p className="text-center text-gray-500">Mengganti role...</p>}
+
       <div className="flex items-start space-x-6 mb-6">
-        {/* Character Icon/Avatar - Kiri */}
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 text-center">
           <img 
-            src="https://freeweb3.infura-ipfs.io/ipfs/Qmbhu7Yj2osW5BRaYAwCGF8s9aMcAHYTGY1GPS6VnjRKpe" 
+            src={activeInventory ? activeInventory.skin_image_url : "https://freeweb3.infura-ipfs.io/ipfs/Qmbhu7Yj2osW5BRaYAwCGF8s9aMcAHYTGY1GPS6VnjRKpe"} 
             alt="Character" 
-            className="w-48 h-48 rounded-full"
-            onError={(e) => {
-              e.currentTarget.src = 'https://via.placeholder.com/192x192?text=Character'
-            }}
+            className="w-48 h-48 rounded-full border-4 border-gray-200"
           />
+          {activeInventory && (
+            <span className="mt-2 inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-full font-minecraft">
+              {activeInventory.skin_name}
+            </span>
+          )}
         </div>
         
-        {/* Attribute List - Kanan */}
         <div className="flex-1 space-y-3">
-          {roleExpData.map((role) => {
-            const expPercentage = (role.currentExp / role.maxExp) * 100
-            const isCurrentRole = role.id === userRole
+          {roles.map((role) => {
+            const { percentage, expInCurrentLevel, expForNextLevel } = getExpDetails(role.level, role.exp);
             
             return (
               <div 
-                key={role.id}
-                className={`p-3 border rounded-lg ${
-                  isCurrentRole 
-                    ? 'border-orange-500 bg-orange-50' 
-                    : 'border-gray-200 bg-white'
-                } cursor-pointer`}
-                onClick={() => handleRoleChange(role.id)}
+                key={String(role.id)}
+                className={`p-3 border rounded-lg transition-all ${role.is_active ? 'border-orange-500 bg-orange-50 shadow-md' : 'border-gray-200 bg-white hover:border-gray-400'} ${isSubmitting || role.is_active ? 'cursor-default' : 'cursor-pointer'}`}
+                onClick={() => handleRoleChange(role)}
               >
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    {/* Badge */}
-                    <div 
-                      className={`w-8 h-8 rounded-full flex items-center justify-center bg-gray-100 hover:scale-110 transition-transform ${
-                        isCurrentRole ? '' : ''
-                      }`}
-                      title={`Ganti ke role ${role.name}`}
-                    >
-                      <img 
-                        src={role.badge} 
-                        alt={`${role.name} Badge`}
-                        className="w-6 h-6 object-contain"
-                      />
-                    </div>
-                    
-                    {/* Role Name */}
-                    <div>
-                      <h4 className={`font-semibold text-sm font-minecraft ${
-                        isCurrentRole ? 'text-orange-700' : 'text-gray-900'
-                      }`}>
-                        {role.name}
-                        {isCurrentRole && (
-                          <span className="ml-2 text-xs bg-orange-500 text-white px-2 py-1 rounded-full">
-                            Active
-                          </span>
-                        )}
-                      </h4>
-                      <div className="text-xs text-gray-600 font-minecraft py-2">
-                        Level {role.level} • {role.currentExp}/{role.maxExp} EXP
-                      </div>
-                    </div>
+                  <div>
+                    <h4 className={`font-semibold font-minecraft ${role.is_active ? 'text-orange-700' : 'text-gray-900'}`}>
+                      {role.role_name} {role.is_active && <span className="text-xs bg-orange-500 text-white px-2 py-1 rounded-full ml-2">Active</span>}
+                    </h4>
+                    <p className="text-xs text-gray-600 font-minecraft py-1">
+                      Level {String(role.level)}
+                    </p>
                   </div>
-                  
-                  {/* Exp Bar */}
-                  <div className="w-20">
-                    <img 
-                      src={expPercentage === 0 ? '/assets/bar0.png' : 
-                           expPercentage <= 25 ? '/assets/bar25.png' :
-                           expPercentage <= 50 ? '/assets/bar50.png' :
-                           expPercentage <= 75 ? '/assets/bar75.png' : '/assets/bar100.png'}
-                      alt={`${Math.round(expPercentage)}% EXP`}
-                      className="w-full h-2 object-cover"
-                      onError={(e) => {
-                        e.currentTarget.src = 'https://via.placeholder.com/80x8?text=EXP+Bar'
-                      }}
-                    />
-                  </div>
+                  <p className="text-xs font-semibold text-gray-700 font-minecraft">
+                    {expInCurrentLevel} / {expForNextLevel} EXP
+                  </p>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+                  <div 
+                    className="bg-green-500 h-2.5 rounded-full" 
+                    style={{ width: `${percentage}%` }}
+                  ></div>
                 </div>
               </div>
-            )
+            );
           })}
         </div>
       </div>
-    
     </div>
-  )
+  );
 }

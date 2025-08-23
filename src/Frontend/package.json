@@ -13,11 +13,6 @@
     "copy:dfx:win": "scripts/copy-dfx-assets.bat"
   },
   "dependencies": {
-    "@dfinity/agent": "^3.2.1",
-    "@dfinity/auth-client": "^3.2.1",
-    "@dfinity/candid": "^3.2.1",
-    "@dfinity/identity": "^3.2.1",
-    "@dfinity/principal": "^3.2.1",
     "lucide-react": "^0.294.0",
     "next": "14.0.4",
     "react": "^18",
