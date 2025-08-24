@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'Minecraft';
+  src: url('/fonts/minecraft.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@layer base {
+  html {
+    font-family: 'Minecraft', monospace;
+  }
+  
+  body {
+    font-family: 'Minecraft', monospace;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold py-3 px-6 rounded-lg transition-colors duration-200 shadow-lg;
+  }
+  
+  .btn-secondary {
+    @apply bg-white hover:bg-gray-100 text-gray-900 font-bold py-3 px-6 rounded-lg transition-colors duration-200 border-2 border-gray-900 shadow-lg;
+  }
+  
+  .section-padding {
+    @apply py-16 px-4 sm:px-6 lg:px-8;
+  }
+  
+  .role-card {
+    @apply group cursor-pointer transition-all duration-300 hover:scale-105;
+  }
+  
+  .role-icon {
+    @apply w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-4 transition-all duration-300 shadow-lg group-hover:shadow-xl group-hover:scale-110;
+  }
+  
+  .event-card {
+    @apply bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300;
+  }
+}
