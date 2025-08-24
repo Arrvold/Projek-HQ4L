@@ -1,51 +1,98 @@
-from fastapi import FastAPI, Request
-import google.generativeai as genai
 import os
 import json
+import google.generativeai as genai
+from uagents import Agent, Context, Protocol, Model
+from uagents_core.contrib.protocols.chat import ChatMessage
 
-app = FastAPI()
-
-# Setup API Key Gemini
+# 🔑 Setup Gemini
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
+# 🔑 Setup Agent
+agent = Agent(
+    name="quest_agent",
+    seed="quest-agent-secret",
+    port=8001,
+    endpoint=["http://127.0.0.1:8000/submit"],
+)
 
-# nanti disini ada link untuk tembak ke agentverse pake endpoint function_id 
+# 📝 Model input untuk generate quest
+class QuestRequest(Model):
+    role: str
+    level: int
+    desc: str
 
-@app.post("/generate-quest")
-async def generate_quest(request: Request):
-    data = await request.json()
-    role = data.get("role", "Coders")
-    level = data.get("level", 1)
-    desc = data.get("desc", "")
+# ⚔️ Chat Protocol
+chat_protocol = Protocol("Chat", "1.0")
 
+@chat_protocol.on_message(model=ChatMessage)
+async def handle_chat(ctx: Context, sender: str, msg: ChatMessage):
+    """
+    Kalau user kirim chat → kita balas dengan 5 quest.
+    """
+    ctx.logger.info(f"Chat masuk dari {sender}: {msg.text}")
+
+    # Prompt untuk generate 5 quest
     prompt = f"""
     Anda adalah seorang Game Master yang bertugas menciptakan quest harian untuk membantu pengguna membentuk kebiasaan baik.
 
-    Berdasarkan informasi berikut:
-    * Role Pengguna: {role}
-    * Level Pengguna: {level}
-    * Deskripsi Role: {desc}
+    Buatkan **5 quest harian** berdasarkan informasi:
+    * Role Pengguna: {msg.text or "Coders"}
+    * Level Pengguna: 1
+    * Deskripsi Role: Sesuaikan dengan role di atas
 
-    Tugas Anda:
-    Ciptakan satu (1) quest harian yang relevan, jelas, dan dapat dilakukan oleh pengguna. Quest ini harus:
-    1. Sesuai dengan level pengguna: Quest untuk level rendah harus mudah dan sederhana, sedangkan quest untuk level tinggi harus lebih menantang dan kompleks.
-    2. Menentukan atribut sebagai reward dan cost:
-       * Stamina: Biaya yang dibutuhkan untuk menjalankan quest. Nilai: 1-10.
-       * EXP: Poin pengalaman yang didapat. Nilai: 1-100.
-       * Coin: Mata uang dalam game yang didapat. Nilai: 1-100.
-    3. Mematuhi aturan reward dan cost: Semakin sulit quest, semakin tinggi nilai Stamina, EXP, dan Coin. Sebaliknya, semakin mudah quest, semakin rendah nilainya.
-
-    Format Output:
-    Berikan output dalam format JSON agar mudah diproses oleh sistem. Pastikan tidak ada teks tambahan, hanya objek JSON saja.
+    Aturan:
+    1. Quest untuk level rendah mudah, quest untuk level tinggi lebih menantang.
+    2. Setiap quest punya atribut:
+       - Stamina (1-10)
+       - EXP (1-100)
+       - Coin (1-100)
+    3. Output harus berupa **array JSON berisi 5 objek quest**, tidak boleh ada teks tambahan.
     """
 
     model = genai.GenerativeModel("gemini-1.5-flash")
     response = model.generate_content(prompt)
 
-    # parse output ke JSON
     try:
-        quest = json.loads(response.text)
-    except:
-        quest = {"error": "Response bukan JSON valid", "raw": response.text}
+        quests = json.loads(response.text)
+    except Exception:
+        quests = {"error": "Response bukan JSON valid", "raw": response.text}
 
-    return quest
+    await ctx.send(sender, ChatMessage(text=json.dumps(quests, indent=2)))
+
+
+# 📝 Protocol khusus untuk permintaan "generate quest"
+quest_protocol = Protocol("QuestProtocol", "1.0")
+
+@quest_protocol.on_message(model=QuestRequest)
+async def generate_quest(ctx: Context, sender: str, req: QuestRequest):
+    """
+    Kalau user kirim permintaan generate quest via protokol QuestProtocol.
+    """
+    ctx.logger.info(f"QuestRequest diterima dari {sender}: {req}")
+
+    prompt = f"""
+    Anda adalah Game Master. Buatkan **5 quest harian** untuk role:
+    * Role: {req.role}
+    * Level: {req.level}
+    * Deskripsi: {req.desc}
+
+    Output harus array JSON berisi 5 objek quest.
+    """
+
+    model = genai.GenerativeModel("gemini-1.5-flash")
+    response = model.generate_content(prompt)
+
+    try:
+        quests = json.loads(response.text)
+    except Exception:
+        quests = {"error": "Response bukan JSON valid", "raw": response.text}
+
+    await ctx.send(sender, QuestRequest(role=req.role, level=req.level, desc=json.dumps(quests)))
+
+
+# 🏗️ Include protocols ke agent
+agent.include(chat_protocol)
+agent.include(quest_protocol)
+
+if __name__ == "__main__":
+    agent.run()
