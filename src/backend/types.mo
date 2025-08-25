@@ -53,6 +53,14 @@ module {
     acquired_at : Time.Time;
   };
 
+  public type InventoryItemWithSkin = {
+    id : InventoryId;
+    user_id : UserId;
+    is_active : Bool;
+    acquired_at : Time.Time;
+    skin : Skin;
+  };
+
   // =============================
   // QUEST
   // =============================
@@ -85,7 +93,6 @@ module {
     var coin : Nat;
     var stamina : Nat;
     var last_action_timestamp : Time.Time;
-    var skins : [InventoryItem];
     var quests : [Quest];
   };
 

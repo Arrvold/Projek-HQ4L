@@ -1,0 +1,72 @@
+// Version: 1.0.0
+type CurrentRoleId__39719533 = Nat;
+type CurrentRole__72863291 =
+  {
+    var exp : Nat;
+    id : CurrentRoleId__39719533;
+    var is_active : Bool;
+    var level : Nat;
+    role_id : RoleId__1011870980;
+    user_id : UserId__295400519
+  };
+type InventoryId__301133965 = Nat;
+type InventoryItem__226827519 =
+  {
+    acquired_at : Time__204712574;
+    id : InventoryId__301133965;
+    is_active : Bool;
+    skin_id : SkinId__260511526;
+    user_id : UserId__295400519
+  };
+type QuestStatus__652308753 = {#Completed; #Failed; #OnProgress};
+type Quest__812857817 =
+  {
+    accepted_at : Time__204712574;
+    coin_reward : Nat;
+    deadline : Time__204712574;
+    description : Text;
+    exp_reward : Nat;
+    id : Nat;
+    stamina_cost : Nat;
+    var status : QuestStatus__652308753;
+    title : Text;
+    user_id : UserId__295400519
+  };
+type RoleId__1011870980 = Nat;
+type SkinId__260511526 = Nat;
+type Skin__394207106 =
+  {
+    description : Text;
+    id : SkinId__260511526;
+    image_url : Text;
+    name : Text;
+    price : Nat
+  };
+type Time__204712574 = Int;
+type UserId__295400519 = Nat;
+type User__713481640 =
+  {
+    var coin : Nat;
+    id : UserId__295400519;
+    var last_action_timestamp : Time__204712574;
+    owner_principal : Principal;
+    var quests : [Quest__812857817];
+    var stamina : Nat;
+    username : Text
+  };
+actor {
+  stable ADMIN : Principal;
+  stable INITIAL_STAMINA : Nat;
+  stable REGEN_AMOUNT : Nat;
+  stable REGEN_INTERVAL : Nat;
+  stable var current_roles_stable :
+    [(CurrentRoleId__39719533, CurrentRole__72863291)];
+  stable var inventories_stable : [(Principal, [InventoryItem__226827519])];
+  stable var next_current_role_id : Nat;
+  stable var next_inventory_id : Nat;
+  stable var next_quest_id : Nat;
+  stable var next_skin_id : Nat;
+  stable var next_user_id : Nat;
+  stable var skins_stable : [(SkinId__260511526, Skin__394207106)];
+  stable var users_stable : [(Principal, User__713481640)]
+};

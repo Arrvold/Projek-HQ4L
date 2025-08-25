@@ -51,8 +51,7 @@ persistent actor {
     coin : Nat;
     stamina : Nat;
     last_action_timestamp : Time.Time;
-    skins : [InventoryItemView]; // ganti ke view yang immutable
-    quests : [QuestView]; // ganti ke view juga
+    quests : [QuestView];
   };
 
   public type CurrentRoleView = {
@@ -67,7 +66,7 @@ persistent actor {
   type UserProfileView = {
     user : UserView;
     roles : [CurrentRoleView];
-    active_inventory : ?Types.InventoryItem;
+    active_inventory : ?Types.InventoryItemWithSkin;
   };
 
   type ActiveInventoryView = {
@@ -116,7 +115,6 @@ persistent actor {
       coin = u.coin;
       stamina = u.stamina;
       last_action_timestamp = u.last_action_timestamp;
-      skins = u.skins;
       quests = Array.map<Types.Quest, QuestView>(u.quests, toQuestView);
     };
   };
@@ -264,7 +262,6 @@ persistent actor {
       var coin = 0;
       var stamina = INITIAL_STAMINA;
       var last_action_timestamp = Time.now();
-      var skins = [];
       var quests = [];
     };
 
@@ -588,12 +585,39 @@ persistent actor {
     };
   };
 
-  public shared query (msg) func getInventory() : async [Types.InventoryItem] {
+  public shared query (msg) func getInventory() : async [Types.InventoryItemWithSkin] {
     switch (inventories.get(msg.caller)) {
       case null { [] };
-      case (?items) { items };
+      case (?items) {
+        Array.map<Types.InventoryItem, Types.InventoryItemWithSkin>(
+          items,
+          func(item) {
+            let skin = switch (skins.get(item.skin_id)) {
+              case null {
+                {
+                  id = item.skin_id;
+                  name = "Unknown Skin";
+                  description = "Skin data not found";
+                  image_url = "";
+                  price = 0;
+                };
+              };
+              case (?s) { s };
+            };
+
+            {
+              id = item.id;
+              user_id = item.user_id;
+              is_active = item.is_active;
+              acquired_at = item.acquired_at;
+              skin = skin;
+            };
+          },
+        );
+      };
     };
   };
+
 
   public shared (msg) func setActiveInventory(inventory_id : Types.InventoryId) : async Result.Result<(), Text> {
     let caller = msg.caller;
@@ -662,7 +686,7 @@ persistent actor {
           case (?items) { items };
         };
         let activeInvOpt = Array.find<Types.InventoryItem>(inv, func(item) { item.is_active });
-        let activeViewOpt = switch (activeInvOpt) {
+        let activeViewOpt : ?Types.InventoryItemWithSkin = switch (activeInvOpt) {
           case null { null };
           case (?item) {
             switch (skins.get(item.skin_id)) {
@@ -670,18 +694,16 @@ persistent actor {
               case (?skin) {
                 ?{
                   id = item.id;
-                  skin_id = item.skin_id;
                   user_id = u.id;
                   is_active = item.is_active;
                   acquired_at = item.acquired_at;
-                  skin_name = skin.name;
-                  skin_description = skin.description;
-                  skin_image_url = skin.image_url;
+                  skin = skin;
                 };
               };
             };
           };
         };
+
 
         // 🔹 Filter hanya quest onProgress
         let activeQuests : [QuestView] = Array.map<Types.Quest, QuestView>(
@@ -697,7 +719,6 @@ persistent actor {
             coin = u.coin;
             stamina = u.stamina;
             last_action_timestamp = u.last_action_timestamp;
-            skins = u.skins;
             quests = activeQuests;
           };
           roles = roleViews;
@@ -706,6 +727,18 @@ persistent actor {
       };
     };
   };
+
+  public shared query (msg) func getCoins() : async Result.Result<Nat, Types.UserError> {
+    switch (users.get(msg.caller)) {
+      case null {
+        return #err(#UserNotFound);
+      };
+      case (?u) {
+        return #ok(u.coin);
+      };
+    };
+  };
+
 
   // ======================================
   // USER HELPERS

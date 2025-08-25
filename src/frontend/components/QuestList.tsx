@@ -86,7 +86,7 @@ export default function QuestList({ userRole, quests }: QuestListProps) {
   return (
     <div>
       <h2 className="text-2xl font-bold text-gray-900 mb-6 font-minecraft">
-        Daftar Quest - {userRole}
+        Daftar Quest
       </h2>
       
       {error && <p className="text-red-500 bg-red-100 p-2 rounded mb-4">{error}</p>}

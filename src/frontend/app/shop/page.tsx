@@ -4,141 +4,128 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../lib/AuthContext";
 
-interface ShopItem {
-  id: number;
+type Skin = {
+  id: bigint;
   name: string;
   description: string;
-  image: string;
-  price: number;
-  rarity: string;
-  isLimited?: boolean;
-  isOwned?: boolean;
-}
+  image_url: string;
+  price: bigint;
+};
+
+type ShopView = {
+  available: Skin[];
+  owned: Skin[];
+};
 
 export default function ShopPage() {
   const router = useRouter();
-  const { userProfile, actor, isAuthenticated, isLoading } = useAuth();
-  const [items, setItems] = useState<ShopItem[]>([]);
-  const [isLoadingShop, setIsLoadingShop] = useState(true);
-  const [selectedItem, setSelectedItem] = useState<ShopItem | null>(null);
+  const { actor } = useAuth();
+
+  const [shop, setShop] = useState<ShopView | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedItem, setSelectedItem] = useState<Skin | null>(null);
   const [showModal, setShowModal] = useState(false);
-  const [isBuying, setIsBuying] = useState(false);
+  const [isOwned, setIsOwned] = useState(false);
+  const [coin, setCoin] = useState<number>(0);
 
-  // Load shop data from backend
-  useEffect(() => {
-    const loadShop = async () => {
-      if (actor && userProfile) {
-        try {
-          setIsLoadingShop(true);
-          const shopData = await actor.getShop();
-
-          // Map available skins to shop items
-          const availableItems =
-            shopData.available?.map((skin: any) => ({
-              id: skin.id,
-              name: skin.name,
-              description: skin.description,
-              image: skin.image_url,
-              price: skin.price,
-              rarity: "Epic", // Default rarity, can be enhanced later
-              isLimited: false,
-              isOwned: false,
-            })) || [];
-
-          // Mark owned items
-          const ownedSkins = shopData.owned || [];
-          const itemsWithOwnership = availableItems.map((item: ShopItem) => ({
-            ...item,
-            isOwned: ownedSkins.some((owned: any) => owned.id === item.id),
-          }));
-
-          setItems(itemsWithOwnership);
-        } catch (error) {
-          console.error("Failed to load shop:", error);
-        } finally {
-          setIsLoadingShop(false);
-        }
-      }
-    };
-
-    loadShop();
-  }, [actor, userProfile]);
-
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.replace("/");
+  // Fetch shop
+  const fetchShop = async () => {
+    if (!actor) return;
+    try {
+      const data = await actor.getShop();
+      setShop(data);
+    } catch (err) {
+      console.error("Failed to load shop:", err);
+    } finally {
+      setIsLoading(false);
     }
-  }, [isLoading, isAuthenticated, router]);
+  };
 
-  const openItem = (item: ShopItem) => {
+  // Fetch coins
+  const fetchCoins = async () => {
+    if (!actor) return;
+    try {
+      const result = await actor.getCoins();
+      if ("ok" in result) {
+        setCoin(Number(result.ok));
+      } else {
+        console.error("Gagal ambil coins:", result.err);
+      }
+    } catch (err) {
+      console.error("Error fetch coins:", err);
+    }
+  };
+
+  // Load initial data
+  useEffect(() => {
+    if (!actor) return;
+    fetchShop();
+    fetchCoins();
+  }, [actor]);
+
+  const openItem = (item: Skin, owned: boolean) => {
     setSelectedItem(item);
+    setIsOwned(owned);
     setShowModal(true);
   };
 
   const closeModal = () => {
     setShowModal(false);
     setSelectedItem(null);
+    setIsOwned(false);
   };
 
   const handleBuy = async () => {
-    if (!selectedItem || !actor) return;
-
-    setIsBuying(true);
+    if (!selectedItem || isOwned) return;
     try {
-      // Call backend to purchase item
       const result = await actor.buySkin(selectedItem.id);
-      if (result.ok) {
+
+      if ("ok" in result) {
+        // Refresh coin dari backend
+        await fetchCoins();
+
+        // Update shop state tanpa reload
+        setShop((prev) =>
+          prev
+            ? {
+                available: prev.available.filter((s) => s.id !== selectedItem.id),
+                owned: [...prev.owned, selectedItem],
+              }
+            : prev
+        );
+
         alert(`Berhasil membeli ${selectedItem.name}!`);
-        // Refresh shop data
-        const shopData = await actor.getShop();
-        const availableItems =
-          shopData.available?.map((skin: any) => ({
-            id: skin.id,
-            name: skin.name,
-            description: skin.description,
-            image: skin.image_url,
-            price: skin.price,
-            rarity: "Epic",
-            isLimited: false,
-            isOwned: false,
-          })) || [];
-
-        const ownedSkins = shopData.owned || [];
-        const itemsWithOwnership = availableItems.map((item: ShopItem) => ({
-          ...item,
-          isOwned: ownedSkins.some((owned: any) => owned.id === item.id),
-        }));
-
-        setItems(itemsWithOwnership);
-        closeModal();
-      } else {
-        const errKey = Object.keys(result.err)[0];
-        alert(`Gagal membeli: ${errKey}`);
+      } else if ("err" in result) {
+        switch (result.err) {
+          case "NotEnoughCoin":
+            alert("Coin kamu tidak cukup untuk membeli skin ini.");
+            break;
+          case "AlreadyOwned":
+            alert("Kamu sudah memiliki skin ini.");
+            break;
+          case "UserNotFound":
+            alert("User tidak ditemukan. Silakan login ulang.");
+            break;
+          case "SkinNotFound":
+            alert("Skin tidak ditemukan.");
+            break;
+          default:
+            alert("Terjadi kesalahan saat membeli skin.");
+        }
       }
-    } catch (error) {
-      console.error("Purchase failed:", error);
-      alert("Terjadi kesalahan saat membeli item");
+    } catch (err) {
+      console.error("Gagal beli skin:", err);
+      alert("Gagal membeli item (error koneksi).");
     } finally {
-      setIsBuying(false);
+      closeModal();
     }
   };
 
-  // Show loading state
-  if (isLoading || !userProfile) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl font-semibold">Loading shop...</div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Fixed Header */}
+      {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur border-b-4 border-gray-800">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          {/* Back button */}
           <button
             onClick={() => router.push("/dashboard")}
             className="flex items-center gap-2 text-gray-700 hover:text-gray-900 font-minecraft font-bold border-2 border-gray-600 px-3 py-1 bg-gray-100 hover:bg-gray-200 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.8)] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] transition-all duration-200"
@@ -159,87 +146,110 @@ export default function ShopPage() {
             <span>Kembali</span>
           </button>
 
-          {/* Right side: Energy and Coin */}
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 bg-gray-100 border-2 border-gray-600 px-3 py-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.8)]">
-              <img
-                src="/assets/Stammina.png"
-                alt="Energy"
-                className="w-5 h-5"
-              />
-              <span className="font-bold text-gray-800 font-minecraft">
-                {userProfile.user.stamina}
-              </span>
-            </div>
             <div className="flex items-center gap-2 bg-gray-100 border-2 border-gray-600 px-3 py-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.8)]">
               <img src="/assets/koin.png" alt="Coin" className="w-5 h-5" />
               <span className="font-bold text-gray-800 font-minecraft">
-                {userProfile.user.coin}
+                {coin}
               </span>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Content padding top to avoid header overlay */}
       <main className="max-w-6xl mx-auto px-4 pt-20 pb-10">
         <h1 className="text-3xl font-bold text-gray-900 mb-8 font-minecraft border-b-4 border-gray-800 pb-2 inline-block">
           Shop
         </h1>
 
-        {isLoadingShop && (
+        {isLoading && (
           <div className="text-gray-600 font-minecraft">Memuat item...</div>
         )}
 
-        {!isLoadingShop && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {items.map((item) => (
-              <button
-                key={item.id}
-                className={`group bg-white border-4 overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.8)] transition-all duration-200 text-left transform hover:-translate-y-1 hover:-translate-x-1 ${
-                  item.isOwned
-                    ? "border-green-600 bg-green-50"
-                    : "border-gray-800"
-                }`}
-                onClick={() => openItem(item)}
-                disabled={item.isOwned}
-              >
-                <div className="aspect-square bg-gray-100 border-b-4 border-gray-800">
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src =
-                        "/assets/button.png";
-                    }}
-                  />
-                </div>
-                <div className="p-4 bg-white">
-                  <div className="font-bold text-gray-900 mb-2 font-minecraft truncate text-sm">
-                    {item.name}
-                  </div>
-                  <div className="flex items-center gap-2 text-gray-700 font-minecraft text-sm">
+        {!isLoading && shop && (
+          <>
+            {/* Available Skins */}
+            <h2 className="text-2xl font-bold text-gray-900 mb-4 font-minecraft">
+              Available
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+              {shop.available.map((item) => (
+                <button
+                  key={item.id.toString()}
+                  className="group bg-white border-4 border-gray-800 overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.8)] transition-all duration-200 text-left transform hover:-translate-y-1 hover:-translate-x-1"
+                  onClick={() => openItem(item, false)}
+                >
+                  <div className="aspect-square bg-gray-100 border-b-4 border-gray-800">
                     <img
-                      src="/assets/koin.png"
-                      alt="Coin"
-                      className="w-4 h-4"
+                      src={item.image_url}
+                      alt={item.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src =
+                          "/assets/button.png";
+                      }}
                     />
-                    <span>{item.price}</span>
                   </div>
-                  {item.isOwned && (
-                    <div className="mt-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded font-minecraft font-bold">
-                      OWNED
+                  <div className="p-4 bg-white">
+                    <div className="font-bold text-gray-900 mb-2 font-minecraft truncate text-sm">
+                      {item.name}
                     </div>
-                  )}
-                </div>
-              </button>
-            ))}
-          </div>
+                    <div className="flex items-center gap-2 text-gray-700 font-minecraft text-sm">
+                      <img
+                        src="/assets/koin.png"
+                        alt="Coin"
+                        className="w-4 h-4"
+                      />
+                      <span>{Number(item.price)}</span>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {/* Owned Skins */}
+            <h2 className="text-2xl font-bold text-gray-900 mb-4 font-minecraft">
+              Owned
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {shop.owned.map((item) => (
+                <button
+                  key={item.id.toString()}
+                  className="group bg-gray-200 border-4 border-gray-800 overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] text-left cursor-not-allowed"
+                  onClick={() => openItem(item, true)}
+                >
+                  <div className="aspect-square bg-gray-100 border-b-4 border-gray-800">
+                    <img
+                      src={item.image_url}
+                      alt={item.name}
+                      className="w-full h-full object-cover opacity-70"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src =
+                          "/assets/button.png";
+                      }}
+                    />
+                  </div>
+                  <div className="p-4 bg-gray-100">
+                    <div className="font-bold text-gray-700 mb-2 font-minecraft truncate text-sm">
+                      {item.name}
+                    </div>
+                    <div className="flex items-center gap-2 text-gray-600 font-minecraft text-sm">
+                      <img
+                        src="/assets/koin.png"
+                        alt="Coin"
+                        className="w-4 h-4 opacity-70"
+                      />
+                      <span>{Number(item.price)}</span>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </>
         )}
       </main>
 
-      {/* Item Detail Modal */}
+      {/* Modal */}
       {showModal && selectedItem && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-2">
           <div
@@ -274,7 +284,7 @@ export default function ShopPage() {
             <div className="mb-4">
               <div className="aspect-square bg-gray-100 border-4 border-gray-800 overflow-hidden">
                 <img
-                  src={selectedItem.image}
+                  src={selectedItem.image_url}
                   alt={selectedItem.name}
                   className="w-full h-full object-cover"
                   onError={(e) => {
@@ -292,15 +302,10 @@ export default function ShopPage() {
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2 text-gray-900 font-semibold font-minecraft">
                 <img src="/assets/koin.png" alt="Coin" className="w-5 h-5" />
-                <span>{selectedItem.price}</span>
+                <span>{Number(selectedItem.price)}</span>
               </div>
-              {selectedItem.isLimited && (
-                <span className="text-xs px-3 py-1 border-2 border-yellow-600 bg-yellow-100 text-yellow-800 font-minecraft font-bold">
-                  Limited
-                </span>
-              )}
-              {selectedItem.isOwned && (
-                <span className="text-xs px-3 py-1 border-2 border-green-600 bg-green-100 text-green-800 font-minecraft font-bold">
+              {isOwned && (
+                <span className="text-xs px-3 py-1 border-2 border-gray-500 bg-gray-200 text-gray-600 font-minecraft font-bold">
                   Owned
                 </span>
               )}
@@ -313,21 +318,17 @@ export default function ShopPage() {
               >
                 Tutup
               </button>
-              {!selectedItem.isOwned && (
-                <button
-                  onClick={handleBuy}
-                  disabled={
-                    isBuying || userProfile.user.coin < selectedItem.price
-                  }
-                  className={`flex-1 font-bold py-3 px-6 border-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.8)] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] transition-all duration-200 font-minecraft ${
-                    userProfile.user.coin < selectedItem.price
-                      ? "bg-gray-400 text-gray-600 border-gray-500 cursor-not-allowed"
-                      : "bg-orange-500 hover:bg-orange-600 text-white border-orange-700"
-                  }`}
-                >
-                  {isBuying ? "Membeli..." : "Beli"}
-                </button>
-              )}
+              <button
+                onClick={handleBuy}
+                disabled={isOwned}
+                className={`flex-1 font-bold py-3 px-6 border-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.8)] transition-all duration-200 font-minecraft ${
+                  isOwned
+                    ? "bg-gray-300 text-gray-500 border-gray-500 cursor-not-allowed"
+                    : "bg-orange-500 hover:bg-orange-600 text-white border-orange-700 hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)]"
+                }`}
+              >
+                {isOwned ? "Owned" : "Beli"}
+              </button>
             </div>
           </div>
         </div>
