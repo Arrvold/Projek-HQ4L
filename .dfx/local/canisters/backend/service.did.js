@@ -66,6 +66,7 @@ export const idlFactory = ({ IDL }) => {
   const LeaderboardEntry = IDL.Record({
     'exp' : IDL.Nat,
     'username' : IDL.Text,
+    'skin' : IDL.Opt(Skin),
     'user_id' : UserId,
     'level' : IDL.Nat,
   });
@@ -123,7 +124,12 @@ export const idlFactory = ({ IDL }) => {
     'getInventory' : IDL.Func([], [IDL.Vec(InventoryItemWithSkin)], ['query']),
     'getLeaderboardAllUserByRole' : IDL.Func(
         [RoleId],
-        [IDL.Vec(LeaderboardEntry)],
+        [
+          IDL.Record({
+            'topLeaderboard' : IDL.Vec(LeaderboardEntry),
+            'myLeaderboard' : IDL.Opt(LeaderboardEntry),
+          }),
+        ],
         ['query'],
       ),
     'getProfileUser' : IDL.Func([], [IDL.Opt(UserProfileView)], ['query']),

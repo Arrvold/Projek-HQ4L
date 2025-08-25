@@ -4,12 +4,21 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../lib/AuthContext";
 
+interface Skin {
+  id: number;
+  name: string;
+  description: string;
+  image_url: string;
+  price: number;
+}
+
 interface LeaderboardEntry {
   id: number;
   rank: number;
   name: string;
   exp: number;
   role: string;
+  skin: Skin;
   isCurrentUser?: boolean;
 }
 
@@ -23,21 +32,29 @@ export default function LeaderboardPage() {
   const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState(true);
   const [currentUserRank, setCurrentUserRank] = useState<number | null>(null);
 
-  // Redirect if not authenticated
+  const DEFAULT_SKIN: Skin = {
+    id: 0,
+    name: "Default Character",
+    description: "Default Skin",
+    image_url:
+      "https://freeweb3.infura-ipfs.io/ipfs/Qmbhu7Yj2osW5BRaYAwCGF8s9aMcAHYTGY1GPS6VnjRKpe",
+    price: 0,
+  };
+
+  // Redirect jika tidak login
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.replace("/");
     }
   }, [isLoading, isAuthenticated, router]);
 
-  // Load leaderboard data from backend
+  // Load leaderboard dari SC
   useEffect(() => {
     const loadLeaderboard = async () => {
-      if (actor && userProfile) {
+      if (actor) {
         try {
           setIsLoadingLeaderboard(true);
 
-          // Get leaderboard data for selected role
           const roleId = getRoleId(selectedRole);
           const result = await actor.getLeaderboardAllUserByRole(roleId);
 
@@ -48,12 +65,13 @@ export default function LeaderboardPage() {
               name: entry.username,
               exp: entry.exp,
               role: selectedRole,
+              skin: entry.skin ?? DEFAULT_SKIN, // ✅ fallback ke default
               isCurrentUser: entry.user_id === userProfile.user.id,
             }));
 
             setLeaderboardData(entries);
 
-            // Find current user's rank
+            // Cari rank user sekarang
             const currentUserEntry = entries.find(
               (entry: LeaderboardEntry) => entry.isCurrentUser
             );
@@ -70,7 +88,7 @@ export default function LeaderboardPage() {
     };
 
     loadLeaderboard();
-  }, [actor, userProfile, selectedRole]);
+  }, [actor, selectedRole]);
 
   const getRoleId = (roleName: string): number => {
     const roleMap: { [key: string]: number } = {
@@ -105,8 +123,7 @@ export default function LeaderboardPage() {
     return colors[role as keyof typeof colors] || "bg-gray-100 border-gray-600";
   };
 
-  // Show loading state
-  if (isLoading || !userProfile) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-xl font-semibold">Loading leaderboard...</div>
@@ -116,10 +133,9 @@ export default function LeaderboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Fixed Header */}
+      {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur border-b-4 border-gray-800">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          {/* Back button and Title */}
           <div className="flex items-center gap-4">
             <button
               onClick={() => router.push("/dashboard")}
@@ -145,7 +161,7 @@ export default function LeaderboardPage() {
             </h1>
           </div>
 
-          {/* Role Filter */}
+          {/* Role filter */}
           <div className="flex items-center gap-2">
             <span className="text-sm font-bold text-gray-700 font-minecraft">
               Role:
@@ -165,33 +181,31 @@ export default function LeaderboardPage() {
         </div>
       </header>
 
-      {/* Content padding top to avoid header overlay */}
+      {/* Content */}
       <main className="max-w-6xl mx-auto px-4 pt-20 pb-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Left Column - Podium */}
+          {/* Podium */}
           <div className="bg-white border-4 border-gray-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-6 font-minecraft text-center">
               Top 3 Players
             </h2>
 
             {isLoadingLeaderboard ? (
-              <div className="text-center py-8">
-                <div className="text-gray-600 font-minecraft">
-                  Loading podium...
-                </div>
+              <div className="text-center py-8 text-gray-600 font-minecraft">
+                Loading podium...
               </div>
             ) : (
               <div className="relative h-80 flex items-end justify-center">
-                {/* 3rd Place - Brown podium (left) */}
+                {/* 3rd */}
                 <div className="flex flex-col items-center mr-4">
                   <div className="relative mb-2">
                     <img
-                      src="/assets/om_ded.png"
-                      alt="3rd Place"
+                      src={podium[2]?.skin?.image_url}
+                      alt={podium[2]?.skin?.name || "Skin"}
                       className="w-16 h-16 object-contain"
                       onError={(e) => {
                         (e.currentTarget as HTMLImageElement).src =
-                          "/assets/button.png";
+                          DEFAULT_SKIN.image_url;
                       }}
                     />
                     <div className="absolute -top-2 -right-2 bg-orange-300 border-2 border-orange-600 w-6 h-6 flex items-center justify-center text-xs font-bold font-minecraft">
@@ -206,20 +220,19 @@ export default function LeaderboardPage() {
                       {podium[2]?.exp?.toLocaleString() || 0} EXP
                     </div>
                   </div>
-                  {/* Brown podium - shortest */}
                   <div className="w-20 h-16 bg-amber-700 border-2 border-amber-900"></div>
                 </div>
 
-                {/* 1st Place - Yellow podium (center) */}
+                {/* 1st */}
                 <div className="flex flex-col items-center mx-4">
                   <div className="relative mb-2">
                     <img
-                      src="/assets/om_ded.png"
-                      alt="1st Place"
+                      src={podium[0]?.skin?.image_url}
+                      alt={podium[0]?.skin?.name || "Skin"}
                       className="w-16 h-16 object-contain"
                       onError={(e) => {
                         (e.currentTarget as HTMLImageElement).src =
-                          "/assets/button.png";
+                          DEFAULT_SKIN.image_url;
                       }}
                     />
                     <div className="absolute -top-2 -right-2 bg-yellow-400 border-2 border-yellow-600 w-7 h-7 flex items-center justify-center text-xs font-bold font-minecraft">
@@ -234,20 +247,19 @@ export default function LeaderboardPage() {
                       {podium[0]?.exp?.toLocaleString() || 0} EXP
                     </div>
                   </div>
-                  {/* Yellow podium - tallest */}
                   <div className="w-20 h-24 bg-yellow-500 border-2 border-yellow-700"></div>
                 </div>
 
-                {/* 2nd Place - Silver podium (right) */}
+                {/* 2nd */}
                 <div className="flex flex-col items-center ml-4">
                   <div className="relative mb-2">
                     <img
-                      src="/assets/om_ded.png"
-                      alt="2nd Place"
+                      src={podium[1]?.skin?.image_url}
+                      alt={podium[1]?.skin?.name || "Skin"}
                       className="w-16 h-16 object-contain"
                       onError={(e) => {
                         (e.currentTarget as HTMLImageElement).src =
-                          "/assets/button.png";
+                          DEFAULT_SKIN.image_url;
                       }}
                     />
                     <div className="absolute -top-2 -right-2 bg-gray-300 border-2 border-gray-600 w-6 h-6 flex items-center justify-center text-xs font-bold font-minecraft">
@@ -262,28 +274,24 @@ export default function LeaderboardPage() {
                       {podium[1]?.exp?.toLocaleString() || 0} EXP
                     </div>
                   </div>
-                  {/* Silver podium - medium height */}
                   <div className="w-20 h-20 bg-gray-400 border-2 border-gray-600"></div>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Right Column - Leaderboard List */}
+          {/* Leaderboard List */}
           <div className="bg-white border-4 border-gray-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-6 font-minecraft">
               Top 10 Players
             </h2>
 
             {isLoadingLeaderboard ? (
-              <div className="text-center py-8">
-                <div className="text-gray-600 font-minecraft">
-                  Loading leaderboard...
-                </div>
+              <div className="text-center py-8 text-gray-600 font-minecraft">
+                Loading leaderboard...
               </div>
             ) : (
               <>
-                {/* Leaderboard Table */}
                 <div className="space-y-2 mb-6">
                   {filteredData.slice(0, 10).map((entry) => (
                     <div
@@ -291,9 +299,15 @@ export default function LeaderboardPage() {
                       className="flex items-center justify-between p-3 border-2 border-gray-600 bg-gray-50 hover:bg-gray-100 transition-colors"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-gray-800 text-white flex items-center justify-center text-sm font-bold font-minecraft border-2 border-gray-600">
-                          {entry.rank}
-                        </div>
+                        <img
+                          src={entry.skin?.image_url}
+                          alt={entry.skin?.name}
+                          className="w-10 h-10 object-contain border-2 border-gray-600 bg-white"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src =
+                              DEFAULT_SKIN.image_url;
+                          }}
+                        />
                         <div className="flex flex-col">
                           <div className="font-bold text-gray-900 font-minecraft">
                             {entry.name}
@@ -303,7 +317,11 @@ export default function LeaderboardPage() {
                               entry.role
                             )}`}
                           >
-                            {roleNames[entry.role as keyof typeof roleNames]}
+                            {
+                              roleNames[
+                                entry.role as keyof typeof roleNames
+                              ]
+                            }
                           </div>
                         </div>
                       </div>
@@ -314,7 +332,7 @@ export default function LeaderboardPage() {
                   ))}
                 </div>
 
-                {/* Current User Ranking */}
+                {/* Current user rank */}
                 {currentUserRank && (
                   <div className="border-t-4 border-gray-800 pt-4">
                     <h3 className="text-lg font-bold text-gray-900 mb-4 font-minecraft">
@@ -335,7 +353,11 @@ export default function LeaderboardPage() {
                               selectedRole
                             )}`}
                           >
-                            {roleNames[selectedRole as keyof typeof roleNames]}
+                            {
+                              roleNames[
+                                selectedRole as keyof typeof roleNames
+                              ]
+                            }
                           </div>
                         </div>
                       </div>
@@ -344,7 +366,9 @@ export default function LeaderboardPage() {
                           .find(
                             (r: any) =>
                               r.role_name ===
-                              roleNames[selectedRole as keyof typeof roleNames]
+                              roleNames[
+                                selectedRole as keyof typeof roleNames
+                              ]
                           )
                           ?.exp?.toLocaleString() || 0}{" "}
                         EXP

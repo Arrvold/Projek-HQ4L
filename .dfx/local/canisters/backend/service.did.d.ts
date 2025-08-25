@@ -21,6 +21,7 @@ export interface InventoryItemWithSkin {
 export interface LeaderboardEntry {
   'exp' : bigint,
   'username' : string,
+  'skin' : [] | [Skin],
   'user_id' : UserId,
   'level' : bigint,
 }
@@ -111,7 +112,10 @@ export interface _SERVICE {
   'getInventory' : ActorMethod<[], Array<InventoryItemWithSkin>>,
   'getLeaderboardAllUserByRole' : ActorMethod<
     [RoleId],
-    Array<LeaderboardEntry>
+    {
+      'topLeaderboard' : Array<LeaderboardEntry>,
+      'myLeaderboard' : [] | [LeaderboardEntry],
+    }
   >,
   'getProfileUser' : ActorMethod<[], [] | [UserProfileView]>,
   'getShop' : ActorMethod<[], ShopView>,

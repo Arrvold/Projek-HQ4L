@@ -99,18 +99,15 @@ module {
   // =============================
   // ERRORS
   // =============================
-  public type GlobalLeaderboardEntry = {
-    user_id : UserId;
-    username : Text;
-    coin : Nat;
-  };
 
   public type LeaderboardEntry = {
     user_id : UserId;
     username : Text;
     level : Nat;
     exp : Nat;
+    skin : ?Skin;
   };
+
 
   // =============================
   // ERRORS
