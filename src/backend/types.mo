@@ -108,6 +108,11 @@ module {
     skin : ?Skin;
   };
 
+  public type LeaderboardResponse = {
+    myLeaderboard : ?LeaderboardEntry;
+    topLeaderboard : [LeaderboardEntry];
+  };
+
 
   // =============================
   // ERRORS

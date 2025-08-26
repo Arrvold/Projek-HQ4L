@@ -21,8 +21,13 @@ export interface InventoryItemWithSkin {
 export interface LeaderboardEntry {
   'exp' : bigint,
   'username' : string,
+  'skin' : [] | [Skin],
   'user_id' : UserId,
   'level' : bigint,
+}
+export interface LeaderboardResponse {
+  'topLeaderboard' : Array<LeaderboardEntry>,
+  'myLeaderboard' : [] | [LeaderboardEntry],
 }
 export type QuestStatus = { 'Failed' : null } |
   { 'OnProgress' : null } |
@@ -109,10 +114,7 @@ export interface _SERVICE {
   'failExpiredQuests' : ActorMethod<[], undefined>,
   'getCoins' : ActorMethod<[], Result_2>,
   'getInventory' : ActorMethod<[], Array<InventoryItemWithSkin>>,
-  'getLeaderboardAllUserByRole' : ActorMethod<
-    [RoleId],
-    Array<LeaderboardEntry>
-  >,
+  'getLeaderboardAllUserByRole' : ActorMethod<[RoleId], LeaderboardResponse>,
   'getProfileUser' : ActorMethod<[], [] | [UserProfileView]>,
   'getShop' : ActorMethod<[], ShopView>,
   'getStamina' : ActorMethod<[], Result_2>,

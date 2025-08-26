@@ -114,10 +114,16 @@ type QuestStatus =
    Failed;
    OnProgress;
  };
+type LeaderboardResponse = 
+ record {
+   myLeaderboard: opt LeaderboardEntry;
+   topLeaderboard: vec LeaderboardEntry;
+ };
 type LeaderboardEntry = 
  record {
    exp: nat;
    level: nat;
+   skin: opt Skin;
    user_id: UserId;
    username: text;
  };
@@ -152,7 +158,7 @@ service : {
   getCoins: () -> (Result_2) query;
   getInventory: () -> (vec InventoryItemWithSkin) query;
   getLeaderboardAllUserByRole: (role_id: RoleId) ->
-   (vec LeaderboardEntry) query;
+   (LeaderboardResponse) query;
   getProfileUser: () -> (opt UserProfileView) query;
   getShop: () -> (ShopView) query;
   getStamina: () -> (Result_2);

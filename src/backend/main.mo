@@ -793,26 +793,21 @@ persistent actor {
   // ======================================
   public shared query (msg) func getLeaderboardAllUserByRole(
     role_id : Types.RoleId
-  ) : async {
-    myLeaderboard : ?Types.LeaderboardEntry;
-    topLeaderboard : [Types.LeaderboardEntry];
-  } {
-    // 1. Ambil semua role dan filter berdasarkan role_id
+  ) : async Types.LeaderboardResponse {
+
     let all_roles = Iter.toArray(current_roles.vals());
     let filtered_roles = Array.filter<Types.CurrentRole>(
       all_roles,
       func(r) { r.role_id == role_id },
     );
 
-    // 2. Urutkan role berdasarkan EXP secara descending
     func compare(a : Types.CurrentRole, b : Types.CurrentRole) : Order.Order {
-      if (a.exp > b.exp) { return #less }; // a dulu
-      if (b.exp > a.exp) { return #greater }; // b dulu
+      if (a.exp > b.exp) { return #less };
+      if (b.exp > a.exp) { return #greater };
       return #equal;
     };
     let sorted_roles = Array.sort<Types.CurrentRole>(filtered_roles, compare);
 
-    // 3. Buat map user_id → user
     let user_id_map = HashMap.HashMap<Types.UserId, Types.User>(
       users.size(),
       Nat.equal,
@@ -822,7 +817,7 @@ persistent actor {
       user_id_map.put(u.id, u);
     };
 
-    // Helper: ambil skin aktif user berdasarkan Principal
+    // helper untuk ambil skin aktif
     func getActiveSkin(p : Principal) : ?Types.Skin {
       switch (inventories.get(p)) {
         case null { null };
@@ -841,13 +836,13 @@ persistent actor {
       };
     };
 
-    // 4. Ambil data leaderboard untuk caller
+    // cari myLeaderboard
     var myLeaderboard : ?Types.LeaderboardEntry = null;
     switch (users.get(msg.caller)) {
       case null {};
       case (?callerUser) {
         let callerRoleOpt = Array.find<Types.CurrentRole>(
-          filtered_roles,
+          sorted_roles,
           func(r) { r.user_id == callerUser.id },
         );
 
@@ -861,26 +856,38 @@ persistent actor {
               level = 0;
               exp = 0;
               skin = skinOpt;
+              rank = 0;
             };
           };
           case (?callerRole) {
+            // hitung rank
+            let idxOpt = Array.indexOf<Types.CurrentRole>(
+              callerRole,
+              sorted_roles,
+              func(a, b) { a.user_id == b.user_id },
+            );
+            let rankNat = switch idxOpt {
+              case null 0;
+              case (?idx) idx + 1;
+            };
+
             ?{
               user_id = callerUser.id;
               username = callerUser.username;
               level = callerRole.level;
               exp = callerRole.exp;
               skin = skinOpt;
+              rank = rankNat;
             };
           };
         };
       };
     };
 
-    // 5. Buat top 10 leaderboard
+    // top 10
     let buf = Buffer.Buffer<Types.LeaderboardEntry>(10);
     var i : Nat = 0;
-    label l loop {
-      if (i >= sorted_roles.size() or buf.size() >= 10) break l;
+    while (i < sorted_roles.size() and buf.size() < 10) {
       let role = sorted_roles[i];
       switch (user_id_map.get(role.user_id)) {
         case null {};
@@ -892,13 +899,13 @@ persistent actor {
             level = role.level;
             exp = role.exp;
             skin = skinOpt;
+            rank = i + 1;
           });
         };
       };
       i += 1;
     };
 
-    // 6. Return hasil
     {
       myLeaderboard = myLeaderboard;
       topLeaderboard = Buffer.toArray(buf);
