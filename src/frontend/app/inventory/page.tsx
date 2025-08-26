@@ -91,7 +91,7 @@ export default function InventoryPage() {
                   <img
                     src={activeItem.skin.image_url}
                     alt={activeItem.skin.name}
-                    className="w-48 h-48 object-cover border-4 border-gray-800 mb-4"
+                    className="w-96 h-96 object-cover border-4 border-gray-800 mb-4"
                   />
                   <h3 className="font-bold font-minecraft text-lg">
                     {activeItem.skin.name}

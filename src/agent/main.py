@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Setup Gemini dengan API Key langsung di kode
-GEMINI_API_KEY = "AIzaSyAt3bQKGdBpo7VRpxik-KsGbGUK8FTyYts"
+GEMINI_API_KEY = "AIzaSyCu4MyCQEzYbIWI1ueZRZ644VuATc8QPZk"
 genai.configure(api_key=GEMINI_API_KEY)
 
 # === REST API ===

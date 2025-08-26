@@ -384,7 +384,15 @@ export default function Dashboard() {
               onMouseUp={() => setIsStartPressed(false)}
               onMouseLeave={() => setIsStartPressed(false)}
             >
-              <img src={isStartPressed ? "/assets/add_quest_btn_pressed.png" : "/assets/add_quest_btn_normal.png"} alt="Ambil Quest" className="w-56 mx-auto" />
+              <img src={
+                questHistory.onProgress.length === 0
+                  ? isStartPressed
+                    ? '/assets/start_quest_btn_pressed.png'
+                    : '/assets/start_quest_btn_normal.png'
+                  : isStartPressed
+                    ? '/assets/add_quest_btn_pressed.png'
+                    : '/assets/add_quest_btn_normal.png'
+              } alt="Ambil Quest" className="w-56 mx-auto" />
             </div>
 
             {isGenerating && (<p className="text-center text-gray-600 font-minecraft animate-pulse">Menghubungi AI Quest Master...</p>)}
@@ -530,43 +538,74 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* ===================== Modals ===================== */}
+
+      {/* Modal untuk Generate Quest (DENGAN TOMBOL REFRESH) */}
       {showGeneratedQuestsModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div
             className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
-            onClick={() => !isSubmittingQuest && setShowGeneratedQuestsModal(false)}
+            onClick={() => !isSubmittingQuest && !isGenerating && setShowGeneratedQuestsModal(false)}
           ></div>
           <div className="relative bg-white rounded-2xl shadow-2xl mx-4 w-full max-w-3xl p-6">
-            <h3 className="text-2xl font-bold mb-4 font-minecraft">Pilih Misi Harian Anda!</h3>
-            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-              {generatedQuests.map((q, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                  <h4 className="font-bold text-lg font-minecraft text-gray-800">{q.judul}</h4>
-                  <p className="text-gray-600 my-2 font-minecraft">{q.deskripsi_quest}</p>
-                  <div className="flex items-center justify-between mt-3 text-sm font-minecraft">
-                    <div className="flex space-x-4">
-                      <span className="text-red-500">Stamina: -{q.stamina}</span>
-                      <span className="text-green-500">EXP: +{q.exp}</span>
-                      <span className="text-yellow-500">Coin: +{q.coin}</span>
-                    </div>
-                    <button
-                      onClick={() => handleAcceptGeneratedQuest(q)}
-                      disabled={isSubmittingQuest}
-                      className="px-4 py-2 bg-blue-500 text-white rounded-lg font-bold hover:bg-blue-600 disabled:bg-gray-400"
-                    >
-                      {isSubmittingQuest ? "Memilih..." : "Pilih Quest"}
-                    </button>
-                  </div>
-                </div>
-              ))}
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-2xl font-bold font-minecraft">Pilih Misi Harian Anda!</h3>
+              <div className="flex items-center gap-4">
+                {/* TOMBOL REFRESH BARU */}
+                <button
+                  onClick={handleGenerateQuests}
+                  disabled={isGenerating}
+                  className="p-2 rounded-full hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  title="Minta quest baru"
+                >
+                  {/* Ikon Refresh (SVG) */}
+                  <svg className={`w-6 h-6 text-gray-600 ${isGenerating ? 'animate-spin' : ''}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001a10.5 10.5 0 0 0-9.293-8.052 10.5 10.5 0 0 0-9.293 8.052h4.992v.001a5.25 5.25 0 0 1 9.293 0v-.001Z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.977 15.152h-4.992a10.5 10.5 0 0 0 9.293 8.052 10.5 10.5 0 0 0 9.293-8.052h-4.992a5.25 5.25 0 0 1-9.293 0Z" />
+                  </svg>
+                </button>
+
+                <button
+                  onClick={() => !isSubmittingQuest && !isGenerating && setShowGeneratedQuestsModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                > ✕ </button>
+              </div>
             </div>
-            <button
-              onClick={() => !isSubmittingQuest && setShowGeneratedQuestsModal(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
-            > ✕ </button>
+
+            {/* INDIKATOR LOADING SAAT REFRESH */}
+            {isGenerating ? (
+              <div className="text-center py-10 font-minecraft text-gray-500">
+                Memuat quest baru...
+              </div>
+            ) : (
+              <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                {generatedQuests.map((q, index) => (
+                  <div key={index} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                    <h4 className="font-bold text-lg font-minecraft text-gray-800">{q.judul}</h4>
+                    <p className="text-gray-600 my-2 font-minecraft">{q.deskripsi_quest}</p>
+                    <div className="flex items-center justify-between mt-3 text-sm font-minecraft">
+                      <div className="flex flex-wrap gap-x-4 gap-y-1">
+                        <span className="text-red-500">Stamina: -{q.stamina}</span>
+                        <span className="text-green-500">EXP: +{q.exp}</span>
+                        <span className="text-yellow-500">Coin: +{q.coin}</span>
+                      </div>
+                      <button
+                        onClick={() => handleAcceptGeneratedQuest(q)}
+                        disabled={isSubmittingQuest}
+                        className="px-4 py-2 bg-blue-500 text-white rounded-lg font-bold hover:bg-blue-600 disabled:bg-gray-400 ml-4"
+                      >
+                        {isSubmittingQuest ? "Memilih..." : "Pilih Quest"}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
+
+      {/* ... sisa modal lainnya tetap sama ... */}
     </div>
   );
 }
