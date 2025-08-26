@@ -42,7 +42,9 @@ export default function CharacterInfo({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [localRoles, setLocalRoles] = useState<Role[]>(roles);
 
-  const actItem = Array.isArray(activeInventory) ? activeInventory[0] : activeInventory;
+  const actItem = Array.isArray(activeInventory)
+    ? activeInventory[0]
+    : activeInventory;
 
   // Helper untuk memetakan nama role ke tipe variant Motoko
   const roleNameToVariant = (name: string) => {
@@ -64,19 +66,26 @@ export default function CharacterInfo({
     try {
       const roleVariant = roleNameToVariant(role.role_name);
 
-      // Update di backend
-      await actor.chooseRole(roleVariant);
+      // ✅ Panggil backend
+      const result = await actor.chooseRole(roleVariant);
 
-      // Update state lokal FE (langsung toggle active)
-      setLocalRoles((prev) =>
-        prev.map((r) =>
-          r.id === role.id
-            ? { ...r, is_active: true }
-            : { ...r, is_active: false }
-        )
-      );
+      // ✅ Cek hasil dari backend
+      if ("ok" in result) {
+        // Kalau sukses → update state lokal
+        setLocalRoles((prev) =>
+          prev.map((r) =>
+            r.id === role.id
+              ? { ...r, is_active: true }
+              : { ...r, is_active: false }
+          )
+        );
+      } else if ("err" in result) {
+        // Kalau error dari backend → tampilkan alert
+        alert(`Gagal memilih role: ${result.err}`);
+      }
     } catch (e) {
       console.error("Gagal mengganti role:", e);
+      alert("Terjadi kesalahan saat mengganti role.");
     } finally {
       setIsSubmitting(false);
     }
