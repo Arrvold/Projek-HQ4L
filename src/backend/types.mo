@@ -106,6 +106,7 @@ module {
     level : Nat;
     exp : Nat;
     skin : ?Skin;
+    rank : Nat;
   };
 
   public type LeaderboardResponse = {

@@ -21,6 +21,7 @@ export interface InventoryItemWithSkin {
 export interface LeaderboardEntry {
   'exp' : bigint,
   'username' : string,
+  'rank' : bigint,
   'skin' : [] | [Skin],
   'user_id' : UserId,
   'level' : bigint,

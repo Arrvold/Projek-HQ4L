@@ -66,6 +66,7 @@ export const idlFactory = ({ IDL }) => {
   const LeaderboardEntry = IDL.Record({
     'exp' : IDL.Nat,
     'username' : IDL.Text,
+    'rank' : IDL.Nat,
     'skin' : IDL.Opt(Skin),
     'user_id' : UserId,
     'level' : IDL.Nat,

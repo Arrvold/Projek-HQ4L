@@ -123,6 +123,7 @@ type LeaderboardEntry =
  record {
    exp: nat;
    level: nat;
+   rank: nat;
    skin: opt Skin;
    user_id: UserId;
    username: text;
