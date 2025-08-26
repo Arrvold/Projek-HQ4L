@@ -54,7 +54,7 @@ cd src/frontend/scripts
 ```
 ### 2. Run the Project
 
-Follow these simple steps in order to start he local environtment:
+Follow these simple steps in order to start he local environment:
 
 #### 1. Start the DFINITY local replica:
 ```bash
@@ -69,4 +69,12 @@ dfx deploy
 cd src/frontend
 npm run dev
 ```
+### 3. Activate the Fetch.ai Agent
+To run the agent locally, navigate to `src/agent` directory and execute the `main.py` script with Python:
+```bash
+cd src/agent
+python main.py
+```
+
+
 
