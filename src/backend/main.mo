@@ -98,7 +98,6 @@ persistent actor {
     accepted_at : Time.Time;
   };
 
-
   public type InventoryItemView = {
     id : Types.InventoryId;
     skin_id : Types.SkinId;
@@ -147,7 +146,6 @@ persistent actor {
       accepted_at = q.accepted_at;
     };
   };
-
 
   // ======================================
   // STATE: User & Roles
@@ -341,14 +339,14 @@ persistent actor {
     description : Text,
     stamina_cost : Nat,
     coin_reward : Nat,
-    exp_reward : Nat
+    exp_reward : Nat,
   ) : async Result.Result<(), Types.UserError> {
     let ?u = users.get(msg.caller) else return #err(#UserNotFound);
 
     // ✅ Cek role dulu
     switch (current_roles.get(u.id)) {
       case null {
-        return #err(#NoActiveRole);   // UserError baru misalnya
+        return #err(#NoActiveRole); // UserError baru misalnya
       };
       case (?role) {
         // ✅ Cek stamina
@@ -382,8 +380,6 @@ persistent actor {
       };
     };
   };
-
-
 
   public shared query (msg) func detailQuest(questId : Nat) : async ?QuestView {
     let ?u = users.get(msg.caller) else return null;
@@ -618,7 +614,6 @@ persistent actor {
     };
   };
 
-
   public shared (msg) func setActiveInventory(inventory_id : Types.InventoryId) : async Result.Result<(), Text> {
     let caller = msg.caller;
 
@@ -704,7 +699,6 @@ persistent actor {
           };
         };
 
-
         // 🔹 Filter hanya quest onProgress
         let activeQuests : [QuestView] = Array.map<Types.Quest, QuestView>(
           Array.filter<Types.Quest>(u.quests, func(q) { q.status == #OnProgress }),
@@ -738,7 +732,6 @@ persistent actor {
       };
     };
   };
-
 
   // ======================================
   // USER HELPERS
@@ -781,10 +774,10 @@ persistent actor {
     for ((id, r) in current_roles.entries()) {
       if (r.user_id == user.id) {
         if (r.role_id == role_id_to_select) {
-          r.is_active := true;   // ✅ Role yang dipilih jadi aktif
+          r.is_active := true; // ✅ Role yang dipilih jadi aktif
           found := true;
         } else {
-          r.is_active := false;  // ✅ Role lain dipaksa nonaktif
+          r.is_active := false; // ✅ Role lain dipaksa nonaktif
         };
         current_roles.put(id, r);
       };
@@ -795,14 +788,15 @@ persistent actor {
     #ok(());
   };
 
-
-
   // ======================================
   // LEADERBOARD
   // ======================================
   public shared query (msg) func getLeaderboardAllUserByRole(
     role_id : Types.RoleId
-  ) : async [Types.LeaderboardEntry] {
+  ) : async {
+    myLeaderboard : ?Types.LeaderboardEntry;
+    topLeaderboard : [Types.LeaderboardEntry];
+  } {
     // 1. Ambil semua role dan filter berdasarkan role_id
     let all_roles = Iter.toArray(current_roles.vals());
     let filtered_roles = Array.filter<Types.CurrentRole>(
@@ -828,62 +822,87 @@ persistent actor {
       user_id_map.put(u.id, u);
     };
 
-    // 4. Buffer hasil leaderboard
-    let result_buf = Buffer.Buffer<Types.LeaderboardEntry>(sorted_roles.size() + 1);
-
-    // 4a. Tambahkan caller di index [0]
-    switch (users.get(msg.caller)) {
-      case null {
-        // caller belum terdaftar → tidak ditambahkan
-      };
-      case (?callerUser) {
-        // cari role caller untuk role_id ini
-        let callerRoleOpt = Array.find<Types.CurrentRole>(
-          filtered_roles,
-          func(r) { r.user_id == callerUser.id },
-        );
-        switch (callerRoleOpt) {
-          case null {
-            // user belum punya role ini
-            result_buf.add({
-              user_id = callerUser.id;
-              username = callerUser.username;
-              level = 0;
-              exp = 0;
-            });
-          };
-          case (?callerRole) {
-            result_buf.add({
-              user_id = callerUser.id;
-              username = callerUser.username;
-              level = callerRole.level;
-              exp = callerRole.exp;
-            });
+    // Helper: ambil skin aktif user berdasarkan Principal
+    func getActiveSkin(p : Principal) : ?Types.Skin {
+      switch (inventories.get(p)) {
+        case null { null };
+        case (?items) {
+          let activeInvOpt = Array.find<Types.InventoryItem>(items, func(i) { i.is_active });
+          switch (activeInvOpt) {
+            case null { null };
+            case (?inv) {
+              switch (skins.get(inv.skin_id)) {
+                case null { null };
+                case (?skin) { ?skin };
+              };
+            };
           };
         };
       };
     };
 
-    // 4b. Tambahkan semua entry leaderboard
+    // 4. Ambil data leaderboard untuk caller
+    var myLeaderboard : ?Types.LeaderboardEntry = null;
+    switch (users.get(msg.caller)) {
+      case null {};
+      case (?callerUser) {
+        let callerRoleOpt = Array.find<Types.CurrentRole>(
+          filtered_roles,
+          func(r) { r.user_id == callerUser.id },
+        );
+
+        let skinOpt = getActiveSkin(msg.caller);
+
+        myLeaderboard := switch (callerRoleOpt) {
+          case null {
+            ?{
+              user_id = callerUser.id;
+              username = callerUser.username;
+              level = 0;
+              exp = 0;
+              skin = skinOpt;
+            };
+          };
+          case (?callerRole) {
+            ?{
+              user_id = callerUser.id;
+              username = callerUser.username;
+              level = callerRole.level;
+              exp = callerRole.exp;
+              skin = skinOpt;
+            };
+          };
+        };
+      };
+    };
+
+    // 5. Buat top 10 leaderboard
+    let buf = Buffer.Buffer<Types.LeaderboardEntry>(10);
     var i : Nat = 0;
-    while (i < sorted_roles.size()) {
+    label l loop {
+      if (i >= sorted_roles.size() or buf.size() >= 10) break l;
       let role = sorted_roles[i];
       switch (user_id_map.get(role.user_id)) {
         case null {};
         case (?user) {
-          result_buf.add({
+          let skinOpt = getActiveSkin(user.owner_principal);
+          buf.add({
             user_id = user.id;
             username = user.username;
             level = role.level;
             exp = role.exp;
+            skin = skinOpt;
           });
         };
       };
       i += 1;
     };
 
-    // 5. Return array
-    return Buffer.toArray(result_buf);
+    // 6. Return hasil
+    {
+      myLeaderboard = myLeaderboard;
+      topLeaderboard = Buffer.toArray(buf);
+    };
   };
 
 };

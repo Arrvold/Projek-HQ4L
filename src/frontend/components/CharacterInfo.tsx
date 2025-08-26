@@ -12,11 +12,20 @@ export interface Role {
   is_active: boolean;
 }
 
+export interface Skin {
+  id: bigint;
+  name: string;
+  description: string;
+  image_url: string;
+  price: bigint;
+}
+
 export interface ActiveInventory {
   id: bigint;
-  skin_name: string;
-  skin_image_url: string;
-  // tambahkan properti lain jika ada
+  user_id: bigint;
+  is_active: boolean;
+  acquired_at: bigint;
+  skin: Skin;
 }
 
 // Props yang diterima komponen
@@ -32,6 +41,8 @@ export default function CharacterInfo({
   const { actor } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [localRoles, setLocalRoles] = useState<Role[]>(roles);
+
+  const actItem = Array.isArray(activeInventory) ? activeInventory[0] : activeInventory;
 
   // Helper untuk memetakan nama role ke tipe variant Motoko
   const roleNameToVariant = (name: string) => {
@@ -116,15 +127,15 @@ export default function CharacterInfo({
         <div className="flex-shrink-0 text-center">
           <img
             src={
-              activeInventory?.skin_image_url ||
+              actItem?.skin.image_url ||
               "https://freeweb3.infura-ipfs.io/ipfs/Qmbhu7Yj2osW5BRaYAwCGF8s9aMcAHYTGY1GPS6VnjRKpe"
             }
-            alt={activeInventory?.skin_name || "Default Character"}
+            alt={actItem?.skin.name || "Default Character"}
             className="w-48 h-48 rounded-full border-4 border-gray-200 object-cover"
           />
 
           <span className="mt-2 inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-full font-minecraft">
-            {activeInventory?.skin_name || "Default Skin"}
+            {actItem?.skin.name || "Default Skin"}
           </span>
         </div>
 

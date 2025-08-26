@@ -118,6 +118,7 @@ type LeaderboardEntry =
  record {
    exp: nat;
    level: nat;
+   skin: opt Skin;
    user_id: UserId;
    username: text;
  };
@@ -152,7 +153,10 @@ service : {
   getCoins: () -> (Result_2) query;
   getInventory: () -> (vec InventoryItemWithSkin) query;
   getLeaderboardAllUserByRole: (role_id: RoleId) ->
-   (vec LeaderboardEntry) query;
+   (record {
+      myLeaderboard: opt LeaderboardEntry;
+      topLeaderboard: vec LeaderboardEntry;
+    }) query;
   getProfileUser: () -> (opt UserProfileView) query;
   getShop: () -> (ShopView) query;
   getStamina: () -> (Result_2);
