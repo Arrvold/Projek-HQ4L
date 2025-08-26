@@ -35,7 +35,7 @@ persistent actor {
   // ADMIN CONFIG
   // ======================================
   let ADMIN : Principal = Principal.fromText(
-    "nnzip-enetn-vwrwr-pti5a-vjj2f-6har4-qov57-w67ex-hicwy-v74du-nae"
+    "d7txh-tllsu-qb6bh-4kq2v-wx2ie-phukm-k2cim-ibzsg-gsl5r-dqzgo-iqe"
   );
 
   // ======================================

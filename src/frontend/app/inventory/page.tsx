@@ -105,7 +105,7 @@ export default function InventoryPage() {
                   <img
                     src="https://freeweb3.infura-ipfs.io/ipfs/Qmbhu7Yj2osW5BRaYAwCGF8s9aMcAHYTGY1GPS6VnjRKpe"
                     alt="Default Character"
-                    className="w-48 h-48 object-cover border-4 border-gray-800 mb-4"
+                    className="w-96 h-96 object-cover border-4 border-gray-800 mb-4"
                   />
                   <h3 className="font-bold font-minecraft text-lg">
                     Default Skin
@@ -134,7 +134,7 @@ export default function InventoryPage() {
                   <img
                     src={item.skin.image_url}
                     alt={item.skin.name}
-                    className="w-full h-32 object-cover border-2 border-gray-600 mb-2"
+                    className="w-full h-[300px] object-cover border-2 border-gray-600 mb-2"
                   />
                   <h3 className="font-bold font-minecraft">{item.skin.name}</h3>
                   <p className="text-sm text-gray-600 font-minecraft">

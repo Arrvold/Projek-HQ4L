@@ -109,11 +109,11 @@ export default function QuestList({ userRole, quests }: QuestListProps) {
             src={
               onProgressQuests.length === 0
                 ? isStartPressed
+                  ? '/assets/add_quest_btn_pressed.png'
+                  : '/assets/add_quest_btn_normal.png'
+                : isStartPressed
                   ? '/assets/start_quest_btn_pressed.png'
                   : '/assets/start_quest_btn_normal.png'
-                : isStartPressed
-                ? '/assets/add_quest_btn_pressed.png'
-                : '/assets/add_quest_btn_normal.png'
             }
             alt="Ambil Quest"
             className="w-56 mx-auto"
