@@ -1,3 +1,6 @@
+![tag:innovationlab](https://img.shields.io/badge/innovationlab-3D8BD3)
+![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
+
 # Habits Quest 4 Life
 
 Habits Quest 4 Life is a unique application designed to help users build positive habits through a gamified daily quest system. The project leverages a Fetch.ai agent, which acts as a Game Master to generate personalized daily quests. The application is built on the DFINITY Internet Computer (IC), with a Motoko backend and a Next.js frontend.
