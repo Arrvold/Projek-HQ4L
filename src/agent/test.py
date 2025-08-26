@@ -10,9 +10,10 @@ from uagents_core.contrib.protocols.chat import (
     chat_protocol_spec,
 )
 
-# ===== API Keys =====
-GEMINI_API_KEY = os.getenv("AIzaSyAt3bQKGdBpo7VRpxik-KsGbGUK8FTyYts") or "ISI_API_KEY_GEMINI"
-AGENTVERSE_API_KEY = os.getenv("eyJhbGciOiJSUzI1NiJ9.eyJleHAiOjE3NTg2MTAzODYsImlhdCI6MTc1NjAxODM4NiwiaXNzIjoiZmV0Y2guYWkiLCJqdGkiOiIxZDA2OThhMGQ1YzE0MDBjYTcwODU4NzQiLCJzY29wZSI6ImF2OmFpIGF2Omhvc3RpbmcgYXY6bWFpbGJveCIsInN1YiI6IjUwNjI4NDZjOWFjYWZkZTNiOTkyY2VlZDFkYmY4Y2IwZmRlNGNlNjZhY2Y2MTQ1MSJ9.fbH86yVDvD3gpu1v9BCUv91DnDBVGC8oYmQKznGzbVtm89fNOmevs9i-JXywMPObONQ4yu3ytkTRiOMFnwuTiCDw1DC7Xlk01qgQw1inrwgntxBLdun4M0rv2GRbgLKf2TZI5oIWOsQKQeYk2ThXBPSgesvnekGAdRwduBlLW7c1vRQ0-D3KQXpMSkpcqLT1wZ7VrU-EbpRoPSGwEPRtl3qqB_KoKTGWmVSlWCKhwfmIQQ6AWwM2aCfqvKEwCizK6GJGABFYod4-EVDj6GGu5XYKD33qdSsELAvYc-DiHzbJ9KKgj1TJYXXaU7aR0SG_srGCHUQIZXahKOo31RPVqg") or "ISI_API_KEY_AGENTVERSE"
+# ===== Bagian yang benar =====
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") or "ISI_API_KEY_GEMINI"
+# AGENTVERSE_API_KEY tidak digunakan dalam skenario lokal ini, jadi bisa diabaikan atau diperbaiki juga.
+AGENTVERSE_API_KEY = os.getenv("AGENTVERSE_API_KEY") or "ISI_API_KEY_AGENTVERSE"
 
 # Gemini endpoint
 GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
