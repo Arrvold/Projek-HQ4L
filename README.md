@@ -12,11 +12,11 @@ Habits Quest 4 Life is a unique application designed to help users build positiv
 
 ## Fetch.ai Agent Details
 
-https://agentverse.ai/agents/details/agent1qvwgcsyn0nzhrr9sh3ttxl3npzpdndxy0wcrldqdnf625vuuzjvck3a88r8/profile
+https://agentverse.ai/agents/details/agent1qfuezxug7hgsalxgfftjjcqgne39wnnhdzll7f2grylea5yrreapxqhyhsr/profile
 
 To interact with our agent on the Fetch.ai network, please use the following details:
 - Agent Name: `HQ4L-Agent`
-- Agent Address: `test-agent://agent1qvwgcsyn0nzhrr9sh3ttxl3npzpdndxy0wcrldqdnf625vuuzjvck3a88r8`
+- Agent Address: `test-agent://agent1qfuezxug7hgsalxgfftjjcqgne39wnnhdzll7f2grylea5yrreapxqhyhsr`
 
 It handles two main protocols:
 - Chat Protocol: Responds to user chat messages by generating five daily quests.
