@@ -202,6 +202,7 @@ export default function LeaderboardPage() {
                     <img
                       src={podium[2]?.skin?.image_url}
                       alt={podium[2]?.skin?.name || "Skin"}
+                      
                       className="w-16 h-16 object-contain"
                       onError={(e) => {
                         (e.currentTarget as HTMLImageElement).src =
