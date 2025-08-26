@@ -62,6 +62,7 @@ async def quest_api(data: QuestInput):
                 "coin": [nilai_coin]
             }}
         ]
+        5. Pastikan masing-masing quest berbeda satu sama lain dengan variasi yang menarik.
         """
         
         logger.info("Generating quests with Gemini AI...")
