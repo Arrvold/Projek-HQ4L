@@ -139,9 +139,7 @@ export default function LeaderboardPage() {
     };
     return colors[role as keyof typeof colors] || "bg-gray-100 border-gray-600";
   };
-  console.log(leaderboardData);
   const podium = leaderboardData.slice(0, 3);
-  console.log(podium);
 
   if (isLoading) {
     return (

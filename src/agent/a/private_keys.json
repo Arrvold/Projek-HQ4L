@@ -1,0 +1,14 @@
+{
+    "chat-agent": {
+        "identity_key": "ef60e5b5debe8e17fd1bf9608be37d9ae4e95d4097de3051b0fc07a9f9546bb4",
+        "wallet_key": "k9aWmQWjHT06PWjf1U1QJL42/gdFkePUC59KYQev8/k="
+    },
+    "game-agent": {
+        "identity_key": "986642dcabceee8308c58af07033412b1b6b2441cc34b90532fff92e4214715f",
+        "wallet_key": "9Nr+nHvNxMfuNJTPXnfDMzkV7MlUWlvjfyIKi2UY7r0="
+    },
+    "shop-agent": {
+        "identity_key": "7c135dc3c8c5adad720db358a82351d4daac23cefc1f411b9ac24a95f15907ad",
+        "wallet_key": "YZjQWA+YDemO2rhytmJcAooh+kFmB59uxweL+z50vSk="
+    }
+}
