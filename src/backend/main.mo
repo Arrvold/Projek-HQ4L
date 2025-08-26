@@ -472,19 +472,19 @@ persistent actor {
         // === 🎁 Beri reward ===
         u.coin += quest.coin_reward;
 
-        // Cari role aktif user
-        // Asumsi ada 1 role aktif per user (atau bisa multi-role kalau kamu pakai current_roles)
-        switch (current_roles.get(u.id)) {
-          case null { /* user belum punya role, lewati exp */ };
-          case (?role) {
-            // Tambah exp (misalnya exp = stamina_cost * 10)
+        // ✅ Tambahkan exp ke semua role user yang aktif
+        for ((id, role) in current_roles.entries()) {
+          if (role.user_id == u.id and role.is_active) {
             role.exp += quest.exp_reward;
 
             // Cek level up
             let newLevel = calcLevel(role.exp);
             if (newLevel > role.level) {
-              role.level := newLevel; // Naik level
+              role.level := newLevel;
             };
+
+            // simpan kembali ke hashmap
+            current_roles.put(id, role);
           };
         };
 
